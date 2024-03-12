@@ -31,11 +31,18 @@ if ($?) {
     mkdir -Force -Path ".\outputs" | Out-Null
     "" | Out-File -FilePath $filePath  -Encoding utf8 -Force
 
-    $cmds = @(
-        "nslookup $($outputs.Outputs.storageName.Value).blob.core.windows.net" 
-        "nslookup $($outputs.Outputs.storageName.Value).blob.core.windows.net 8.8.8.8" 
-    )
-
+    [Array]$storageNames = @()
+    if ($null -eq $outputs.Outputs.storageNames) {
+        $storageNames += @{ name = $outputs.Outputs.storageName.Value }
+    } else {
+        $storageNames = ($outputs.Outputs.storageNames | convertto-json | ConvertFrom-Json).Value
+    }
+    $cmds = @()
+    foreach ($storageName in $storageNames) {
+        $cmds += "nslookup $($storageName.name).blob.core.windows.net"
+        $cmds += "nslookup $($storageName.name).blob.core.windows.net 8.8.8.8"
+    }
+    
     foreach ($vm in $vms) {
         foreach ($cmd in $cmds) {
             Write-Information "Execute $cmd on $vm"
@@ -50,4 +57,6 @@ if ($?) {
             '------------------------------------------' | Out-File -Append -FilePath $filePath -Encoding utf8
         }
     } 
+
+    Write-Host "See tests results -> $filePath"
 }

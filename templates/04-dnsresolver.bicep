@@ -46,6 +46,7 @@ module customerA './modules/fullcustomer.bicep' = {
     password: password
     tags: tagsCustomerA
     addressSpace: '10.0.0.0/24'
+    storageCount: 2
   }
 }
 
@@ -56,13 +57,13 @@ module customerB './modules/fullcustomer.bicep' = {
     userName: userName
     password: password
     tags: tagsCustomerB
-    noStorage: true
+    storageCount: 0
     noDnsResolver: false
     addressSpace: '10.1.0.0/24'
-    customerAStorageName: '${customerA.outputs.storageName}.blob.core.windows.net'
+    customerAStorageName: '${customerA.outputs.storageNames[0].name}.blob.core.windows.net'
   }
 }
 
 output rgName string = rgCustomerB.name
 output vms array = customerB.outputs.vms
-output storageName string = customerA.outputs.storageName
+output storageNames array = customerA.outputs.storageNames

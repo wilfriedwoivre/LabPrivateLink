@@ -6,9 +6,12 @@ param password string
 param addressSpace string
 param tags object = {}
 
-param noStorage bool = false
 param noPrivateDNSZone bool = false
 param noDnsResolver bool = true
+
+@minValue(0)
+@maxValue(10)
+param storageCount int = 1
 
 param customerAStorageName string = ''
 
@@ -40,24 +43,25 @@ module privateDnsZoneLink './vnetlink.bicep' = if (!noPrivateDNSZone) {
   }
 }
 
-module storage './storage.bicep' = if (!noStorage) {
-  name: 'demostorage-${deployment().name}'
+module storage './storage.bicep' = [for i in range(0, storageCount): {
+  name: 'demostorage-${deployment().name}-${i}'
   params: {
     tags: tags
   }
-}
+}]
 
-module storagePrivateEndpoint './privateEndpoint.bicep' = if (!noStorage && !noPrivateDNSZone) {
-  name: 'storagePrivateEndpoint-${deployment().name}'
+
+module storagePrivateEndpoint './privateEndpoint.bicep' = [for i in range(0, storageCount): if (!noPrivateDNSZone) {
+  name: 'storagePrivateEndpoint-${deployment().name}-${i}'
   params: {
     groupId: 'blob'
-    privateLinkServiceId: noStorage ? '' : storage.outputs.id
+    privateLinkServiceId: storage[i].outputs.id
     subnetRef: vnetWithPrivateDnsZone.outputs.subnetIds[2].id
     privateDnsZoneName: noPrivateDNSZone ? '' : privateDnsZone.outputs.name
-    recordName: noStorage ? '' : storage.outputs.name
+    recordName: storage[i].outputs.name
     tags: tags
   }
-}
+}]
 
 module vm './vm.bicep' = {
   name: 'vm-${deployment().name}'
@@ -82,4 +86,6 @@ module resolver './dnsresolver.bicep' = if (!noDnsResolver) {
 }
 
 output vms array = [ vm.outputs.name ]
-output storageName string = noStorage ? 'nostorage' : storage.outputs.name
+output storageNames array = [for i in range(0, storageCount): {
+  name: storage[i].outputs.name
+}]

@@ -56,11 +56,11 @@ module customerB './modules/fullcustomer.bicep' = {
     userName: userName
     password: password
     tags: tagsCustomerB
-    noStorage: true
     addressSpace: '10.1.0.0/24'
+    storageCount: 0
   }
 }
 
 output rgName string = rgCustomerB.name
 output vms array = customerB.outputs.vms
-output storageName string = customerA.outputs.storageName
+output storageName string = customerA.outputs.storageNames[0].name
